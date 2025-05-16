@@ -5,23 +5,23 @@
 
 int main(int argc, char *argv[]) {
 
-	for(int i = 1;i < argc; i ++) {
+	for(int i = 1; i < argc; i++) {
 
 		FILE *fp = fopen(argv[i], "r");
 
 		if (fp == NULL) {
-	    	printf("wcat: cannot open file\n");
-	    	exit(1);
-	    }
+			printf("wcat: cannot open file\n");
+			exit(1);
+		}
 
-	    char buffer[BUFFER_SIZE];
+		char buffer[BUFFER_SIZE];
 
-	    while (fgets(buffer, BUFFER_SIZE, fp) != NULL){
-	    	printf("%s",buffer);
-	    }
+		while (fgets(buffer, BUFFER_SIZE, fp) != NULL){
+			printf("%s",buffer);
+		}
 
-	    fclose(fp);
+		fclose(fp);
 	}
-	
-    return 0;
+
+	return 0;
 }

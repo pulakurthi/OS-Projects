@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 
 	if(argc < 2){
 		printf("wgrep: searchterm [file ...]\n");
-	 	exit(1);
+		exit(1);
 	}
 
 	char *search = argv[1];
@@ -27,22 +27,22 @@ int main(int argc, char *argv[]) {
 		FILE *fp = fopen(argv[i], "r");
 
 		if (fp == NULL) {
-	    	printf("wgrep: cannot open file\n");
-	    	exit(1);
-	    }
+			printf("wgrep: cannot open file\n");
+			exit(1);
+		}
 
-        char *line = NULL;
-        size_t linecap = 0;
-        ssize_t linelen;
+		char *line = NULL;
+		size_t linecap = 0;
+		ssize_t linelen;
 		while ((linelen = getline(&line, &linecap, fp)) > 0){
 			if(strstr(line, search) != NULL){
 				printf("%s",line);
 			}
 		}
 
-	    fclose(fp);
+		fclose(fp);
 	}
-	
-    return 0;
+
+	return 0;
 }
 
