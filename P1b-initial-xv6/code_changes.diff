@@ -1,0 +1,124 @@
+diff -u /xv6-public-master/Makefile /ostep-projects-master/initial-xv6/src/Makefile
+--- /xv6-public-master/Makefile	2025-05-20 11:23:04
++++ /ostep-projects-master/initial-xv6/src/Makefile	2025-05-20 11:21:40
+@@ -31,6 +31,9 @@
+ # Cross-compiling (e.g., on Mac OS X)
+ # TOOLPREFIX = i386-jos-elf
+ 
++# macOS Sequoia Version 15.4.1
++TOOLPREFIX  = i386-elf-
++
+ # Using native tools (e.g., on X86 Linux)
+ #TOOLPREFIX = 
+ 
+diff -u /xv6-public-master/syscall.c /ostep-projects-master/initial-xv6/src/syscall.c
+--- /xv6-public-master/syscall.c	2020-08-10 13:28:02
++++ /ostep-projects-master/initial-xv6/src/syscall.c	2025-05-20 11:44:24
+@@ -103,6 +103,7 @@
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_getreadcount(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +127,7 @@
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_getreadcount]   sys_getreadcount,
+ };
+ 
+ void
+diff -u /xv6-public-master/syscall.h /ostep-projects-master/initial-xv6/src/syscall.h
+--- /xv6-public-master/syscall.h	2020-08-10 13:28:02
++++ /ostep-projects-master/initial-xv6/src/syscall.h	2025-05-20 11:42:31
+@@ -20,3 +20,4 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define SYS_getreadcount  22
+diff -u /xv6-public-master/sysfile.c /ostep-projects-master/initial-xv6/src/sysfile.c
+--- /xv6-public-master/sysfile.c	2020-08-10 13:28:02
++++ /ostep-projects-master/initial-xv6/src/sysfile.c	2025-05-20 11:50:57
+@@ -66,12 +66,22 @@
+   return fd;
+ }
+ 
++int readcount = 0;
++
+ int
++sys_getreadcount(void)
++{
++   return readcount;
++}
++
++int
+ sys_read(void)
+ {
+   struct file *f;
+   int n;
+   char *p;
++
++  readcount++;
+ 
+   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+     return -1;
+diff -u /xv6-public-master/user.h /ostep-projects-master/initial-xv6/src/user.h
+--- /xv6-public-master/user.h	2020-08-10 13:28:02
++++ /ostep-projects-master/initial-xv6/src/user.h	2025-05-20 11:41:12
+@@ -23,6 +23,7 @@
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int getreadcount(void);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff -u /xv6-public-master/usertests.c /ostep-projects-master/initial-xv6/src/usertests.c
+--- /xv6-public-master/usertests.c	2020-08-10 13:28:02
++++ /ostep-projects-master/initial-xv6/src/usertests.c	2025-05-20 12:11:53
+@@ -1745,6 +1745,26 @@
+   return randstate;
+ }
+ 
++/* read count test */
++void
++readcounttest(void)
++{
++  int readcount_prev;
++
++  printf(stdout, "readcount test\n");
++  readcount_prev = getreadcount();
++
++  read(0,0,0);
++
++  if (getreadcount() != readcount_prev + 1){
++    printf(stdout, "readcount test failed!\n");
++    exit();
++  }
++  printf(stdout, "readcount test OK\n");
++
++}
++
++
+ int
+ main(int argc, char *argv[])
+ {
+@@ -1796,6 +1816,8 @@
+   bigdir(); // slow
+ 
+   uio();
++
++  readcounttest();
+ 
+   exectest();
+ 
+diff -u /xv6-public-master/usys.S /ostep-projects-master/initial-xv6/src/usys.S
+--- /xv6-public-master/usys.S	2020-08-10 13:28:02
++++ /ostep-projects-master/initial-xv6/src/usys.S	2025-05-20 11:40:18
+@@ -29,3 +29,4 @@
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(getreadcount)
