@@ -125,6 +125,7 @@ bool check_and_exe_builtin_cmd(char *line)
 	}
 
 	else if(strcmp(myargs[0], "cd") == 0){
+		/* cd always take one argument (0 or >1 args should be signaled as an error). */
 		if(myargc != 2 || 0 != chdir(myargs[1])){
 			DISPLAY_ERROR
 		}
@@ -199,13 +200,12 @@ bool check_valid_redirection(char *line, char **output_file){
 		/* ignore > */
 		find_redirection++;
 		*output_file = strtok(find_redirection, delimiters);
-		/* cd always take one argument (0 args should be signaled as an error). */
 		if(*output_file == NULL){
 			return false;
 		}
 
 		char *check_null = strtok(NULL, delimiters);
-		/* cd always take one argument (>1 args should be signaled as an error). */
+		/* input must have only one output file */
 		if(check_null != NULL){
 			return false;
 		}
