@@ -88,7 +88,7 @@ void parse_line(char *line){
 			parse_command(token);
 			exit(0);
 		} else if(pid > 0) {
-			/* parent keeps track of childrun */
+			/* parent keeps track of children */
 			children[num_children++] = pid;
 		} else {
 			/* fork error */
@@ -96,7 +96,7 @@ void parse_line(char *line){
 		}
 		token = strtok_r(NULL, "&", &saveptr);
 	}
-	/* wait for childrun to complete */
+	/* wait for children to complete */
 	for(int i = 0; i < num_children; i++) {
 		waitpid(children[i], NULL, 0);
 	}
