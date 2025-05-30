@@ -186,9 +186,7 @@ void parse_command(char *line){
 	if(decode_command(line, myargs) > 0){
 		run_program(myargs, output_file);
 	}
-	else{
-		free(myargs);
-	}
+	free(myargs);
 }
 
 
