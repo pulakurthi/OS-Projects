@@ -1,0 +1,94 @@
+Build command: gcc -g -o wish wish.c -Wall -Werror
+Test command: ./test-wish.sh -v 
+
+Test outputs:
+                
+running test 1: Input to check bad cd. No arguments are passed to cd.
+test:      ./wish tests/1.in
+test 1: passed
+
+running test 2: 2 arguments are passed to cd.
+test:      ./wish tests/2.in
+test 2: passed
+
+running test 3: ls with a bad directory name.
+pre-test:  ls /no/such/file > tests/3.out 2> tests/3.err
+test:      ./wish tests/3.in
+test 3: passed
+
+running test 4: Input to run misc. commands.
+test:      ./wish tests/4.in
+test 4: passed
+
+running test 5: Tries to exit with an argument. Should throw an error.
+test:      ./wish tests/5.in
+test 5: passed
+
+running test 6: Try running a shell script without setting path.
+test:      ./wish tests/6.in
+test 6: passed
+
+running test 7: Set path, run a shell script. Overwrite path and then try running the script again.
+test:      ./wish tests/7.in
+test 7: passed
+
+running test 8: Redirection with no output file specified.
+test:      ./wish tests/8.in
+test 8: passed
+
+running test 9: Redirection with multiple output files.
+test:      ./wish tests/9.in
+test 9: passed
+
+running test 10: Redirection with multiple '>'
+test:      ./wish tests/10.in
+test 10: passed
+
+running test 11: Normal redirection.
+test:      ./wish tests/11.in
+test 11: passed
+
+running test 12: Input to check bad redirection. Contains no command before '>'.
+test:      ./wish tests/12.in
+test 12: passed
+
+running test 13: Input file is valid and empty. But shell is invoked in batch mode with 2 files (with same file 13.in used twice)
+test:      ./wish tests/13.in INPUT_DIR/13.in
+test 13: passed
+
+running test 14: Shell is invoked with a bad batch file.
+test:      ./wish tests/p2a-tests/bad
+test 14: passed
+
+running test 15: Tests command with variable whitespace.
+test:      ./wish tests/15.in
+test 15: passed
+
+running test 16: Command only contains &
+test:      ./wish tests/16.in
+test 16: passed
+
+running test 17: Parallel command contains & at the end
+test:      ./wish tests/17.in
+test 17: passed
+
+running test 18: Basic test of running parallel commands.
+test:      ./wish tests/18.in
+test 18: passed
+
+running test 19: Parallel commands with no space between command and '&'
+test:      ./wish tests/19.in
+test 19: passed
+
+running test 20: Redirection and Parallel commands combined
+test:      ./wish tests/20.in
+test 20: passed
+
+running test 21: Empty commands
+test:      ./wish tests/21.in
+test 21: passed
+
+running test 22: Test to check that commands are not executed serially
+test:      ./wish tests/22.in
+test 22: passed
+
