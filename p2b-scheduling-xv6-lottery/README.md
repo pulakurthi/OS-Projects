@@ -1,4 +1,4 @@
-# Project 1b: The xv6 Lottery
+# Project 2b: The xv6 Lottery
 
 Refer: \
 https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/scheduling-xv6-lottery \
