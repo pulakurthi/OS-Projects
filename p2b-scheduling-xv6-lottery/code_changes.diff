@@ -1,0 +1,314 @@
+FILES ADDED:
+pstat.h
+lotterytest.c
+plot_lottery_output.py
+
+
+FILES MODIFIED:
+
+diff -p /xv6-public-master/Makefile ./Makefile
+*** /xv6-public-master/Makefile	2020-08-10 13:28:02
+--- ./Makefile	2025-06-17 12:09:54
+*************** OBJS = \
+*** 31,36 ****
+--- 31,39 ----
+  # Cross-compiling (e.g., on Mac OS X)
+  # TOOLPREFIX = i386-jos-elf
+  
++ # macOS Sequoia Version 15.4.1
++ TOOLPREFIX  = i386-elf-
++ 
+  # Using native tools (e.g., on X86 Linux)
+  #TOOLPREFIX = 
+  
+*************** OBJDUMP = $(TOOLPREFIX)objdump
+*** 76,82 ****
+  LD = $(TOOLPREFIX)ld
+  OBJCOPY = $(TOOLPREFIX)objcopy
+  OBJDUMP = $(TOOLPREFIX)objdump
+! CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+  CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+  ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
+  # FreeBSD ld wants ``elf_i386_fbsd''
+--- 79,85 ----
+  LD = $(TOOLPREFIX)ld
+  OBJCOPY = $(TOOLPREFIX)objcopy
+  OBJDUMP = $(TOOLPREFIX)objdump
+! CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer
+  CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+  ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
+  # FreeBSD ld wants ``elf_i386_fbsd''
+*************** UPROGS=\
+*** 179,184 ****
+--- 182,188 ----
+  	_sh\
+  	_stressfs\
+  	_usertests\
++ 	_lotterytest\
+  	_wc\
+  	_zombie\
+  
+*************** EXTRA=\
+*** 249,255 ****
+  
+  EXTRA=\
+  	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
+! 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
+  	printf.c umalloc.c\
+  	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+  	.gdbinit.tmpl gdbutil\
+--- 253,259 ----
+  
+  EXTRA=\
+  	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
+! 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c lotterytest.c wc.c zombie.c\
+  	printf.c umalloc.c\
+  	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+  	.gdbinit.tmpl gdbutil\
+Only in .: code_changes.diff
+Only in .: lotterytest.c
+Only in .: plot_lottery_output.py
+diff -p /xv6-public-master/proc.c ./proc.c
+*** /xv6-public-master/proc.c	2020-08-10 13:28:02
+--- ./proc.c	2025-06-18 13:29:53
+***************
+*** 6,11 ****
+--- 6,12 ----
+  #include "x86.h"
+  #include "proc.h"
+  #include "spinlock.h"
++ #include "pstat.h"
+  
+  struct {
+    struct spinlock lock;
+*************** userinit(void)
+*** 142,147 ****
+--- 143,152 ----
+    safestrcpy(p->name, "initcode", sizeof(p->name));
+    p->cwd = namei("/");
+  
++   // lottery logic
++   p->tickets = 1;
++   p->ticks = 0;
++ 
+    // this assignment to p->state lets other cores
+    // run this process. the acquire forces the above
+    // writes to be visible, and the lock is also needed
+*************** fork(void)
+*** 203,208 ****
+--- 208,217 ----
+    // Clear %eax so that fork returns 0 in the child.
+    np->tf->eax = 0;
+  
++   // lottery logic
++   np->tickets = curproc->tickets;
++   np->ticks = 0;
++ 
+    for(i = 0; i < NOFILE; i++)
+      if(curproc->ofile[i])
+        np->ofile[i] = filedup(curproc->ofile[i]);
+*************** wait(void)
+*** 311,316 ****
+--- 320,378 ----
+    }
+  }
+  
++ unsigned long randstate = 1;
++ unsigned int
++ rand()
++ {
++   randstate = randstate * 1664525 + 1013904223;
++   return randstate;
++ }
++ 
++ int
++ sys_settickets(void)
++ {
++   struct proc *p;
++   int tickets;
++ 
++   if(argint(0, &tickets) < 0)
++     return -1;
++ 
++   if(tickets < 1)
++     return -1;
++ 
++   p = myproc();
++   p->tickets = tickets;
++ 
++   return 0;
++ }
++ 
++ int
++ sys_getpinfo(void)
++ {
++   struct pstat *ps;
++   struct proc *p;
++   int i;
++ 
++   if(argptr(0, (char **)&ps, sizeof(struct pstat *)) < 0)
++     return -1;
++ 
++   if(ps == 0)
++     return -1;
++ 
++   for(i = 0; i < NPROC; i++){
++     p = &ptable.proc[i];
++     ps->inuse[i] = 0;
++     if(p->state != UNUSED)
++     {
++         ps->inuse[i] = 1;
++         ps->tickets[i] = p->tickets;
++         ps->pid[i] = p->pid;
++         ps->ticks[i] = p->ticks;  
++     }
++   }
++   return 0;
++ }
++ 
+  //PAGEBREAK: 42
+  // Per-CPU process scheduler.
+  // Each CPU calls scheduler() after setting itself up.
+*************** scheduler(void)
+*** 325,347 ****
+--- 387,430 ----
+    struct proc *p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
++   int total_tickets, winner, counter;
+    
+    for(;;){
+      // Enable interrupts on this processor.
+      sti();
+  
++     total_tickets = 0;
++     winner = 0;
++     counter = 0;
++     // Calculate total number of tickets
++     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
++       if(p->state == RUNNABLE){
++         total_tickets += p->tickets;
++       }
++     }
++     // avoid divide by 0 when using %
++     if (total_tickets != 0){
++       winner = rand() % total_tickets;
++     }
++ 
+      // Loop over process table looking for process to run.
+      acquire(&ptable.lock);
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+          continue;
+  
++       counter += p->tickets;
++       if(counter <= winner){
++         continue;
++       }
++ 
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
++       p->ticks++;
+  
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+*************** scheduler(void)
+*** 349,354 ****
+--- 432,440 ----
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
++ 
++       // after a job is completed we must restart the lottery process.
++       break;
+      }
+      release(&ptable.lock);
+  
+diff -p /xv6-public-master/proc.h ./proc.h
+*** /xv6-public-master/proc.h	2020-08-10 13:28:02
+--- ./proc.h	2025-06-17 11:45:39
+*************** struct proc {
+*** 49,54 ****
+--- 49,56 ----
+    struct file *ofile[NOFILE];  // Open files
+    struct inode *cwd;           // Current directory
+    char name[16];               // Process name (debugging)
++   int tickets;
++   int ticks;
+  };
+  
+  // Process memory is laid out contiguously, low addresses first:
+Only in .: pstat.h
+diff -p /xv6-public-master/syscall.c ./syscall.c
+*** /xv6-public-master/syscall.c	2020-08-10 13:28:02
+--- ./syscall.c	2025-06-17 11:51:55
+*************** extern int sys_uptime(void);
+*** 103,108 ****
+--- 103,110 ----
+  extern int sys_wait(void);
+  extern int sys_write(void);
+  extern int sys_uptime(void);
++ extern int sys_settickets(void);
++ extern int sys_getpinfo(void);
+  
+  static int (*syscalls[])(void) = {
+  [SYS_fork]    sys_fork,
+*************** static int (*syscalls[])(void) = {
+*** 126,131 ****
+--- 128,135 ----
+  [SYS_link]    sys_link,
+  [SYS_mkdir]   sys_mkdir,
+  [SYS_close]   sys_close,
++ [SYS_settickets]   sys_settickets,
++ [SYS_getpinfo]     sys_getpinfo,
+  };
+  
+  void
+diff -p /xv6-public-master/syscall.h ./syscall.h
+*** /xv6-public-master/syscall.h	2020-08-10 13:28:02
+--- ./syscall.h	2025-06-17 11:52:08
+***************
+*** 20,22 ****
+--- 20,24 ----
+  #define SYS_link   19
+  #define SYS_mkdir  20
+  #define SYS_close  21
++ #define SYS_settickets  22
++ #define SYS_getpinfo    23
+diff -p /xv6-public-master/user.h ./user.h
+*** /xv6-public-master/user.h	2020-08-10 13:28:02
+--- ./user.h	2025-06-17 11:50:39
+***************
+*** 1,3 ****
+--- 1,5 ----
++ #include "pstat.h"
++ 
+  struct stat;
+  struct rtcdate;
+  
+*************** int uptime(void);
+*** 23,28 ****
+--- 25,32 ----
+  char* sbrk(int);
+  int sleep(int);
+  int uptime(void);
++ int settickets(int);
++ int getpinfo(struct pstat *);
+  
+  // ulib.c
+  int stat(const char*, struct stat*);
+diff -p /xv6-public-master/usys.S ./usys.S
+*** /xv6-public-master/usys.S	2020-08-10 13:28:02
+--- ./usys.S	2025-06-17 11:50:29
+*************** SYSCALL(uptime)
+*** 29,31 ****
+--- 29,33 ----
+  SYSCALL(sbrk)
+  SYSCALL(sleep)
+  SYSCALL(uptime)
++ SYSCALL(settickets)
++ SYSCALL(getpinfo)
