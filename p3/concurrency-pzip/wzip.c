@@ -24,7 +24,7 @@ typedef struct {
 void *worker(void *arg) {
 	myarg_t *args = (myarg_t *) arg;
 	int   *counts = (int*)malloc(args->mem_size * sizeof(int));
-	char  *chars  = (char*)malloc(args->mem_size* sizeof(char));
+	char  *chars  = (char*)malloc(args->mem_size * sizeof(char));
 	assert(counts && chars);
 	int count = 1,n = 0;
 	char c;
@@ -49,7 +49,7 @@ void *worker(void *arg) {
 			count++;
 		}
 	}
-	/* last data */
+	/* last element */
 	if(prev != EOF) {
 		counts[n] = count;
 		chars[n]  = prev;
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 		free(out->chars);
 		free(out);
 	}
-	/* last data */
+	/* last element */
 	if(prev_char != EOF){
 		fwrite(&prev_count,  sizeof(int), 1, stdout);
 		fwrite(&prev_char, sizeof(char),1, stdout);
