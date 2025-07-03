@@ -4,7 +4,8 @@ Refer: \
 https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/concurrency-pzip \
 https://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/Projects/p1a.html
 
-note: the code was developed on macOS
+
+note: the code was developed on macOS \
 compile using gcc -o wzip wzip.c -Wall -Werror -pthread -O
 
 RUN: ./test-wzip.sh -v \
