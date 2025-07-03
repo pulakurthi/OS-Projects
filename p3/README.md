@@ -1,4 +1,4 @@
-#Project 3: Memory Management and Concurrency
+# Project 3: Memory Management and Concurrency
 
 Refer:  \
 https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/concurrency-pzip  \
