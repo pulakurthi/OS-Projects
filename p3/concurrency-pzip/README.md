@@ -31,4 +31,4 @@ test 5: passed \
  \
 running test 6: large file with some compressability - prelude to a contest input? \
 test:      ./wzip tests/6.in \
-test 6: passed \
+test 6: passed 
