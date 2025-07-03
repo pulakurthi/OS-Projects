@@ -24,7 +24,7 @@ typedef struct {
 void *worker(void *arg) {
 	myarg_t *args = (myarg_t *) arg;
 	int   *counts = (int*)malloc(args->mem_size * sizeof(int));
-	char  *chars  = (char*)malloc(args->mem_size);
+	char  *chars  = (char*)malloc(args->mem_size* sizeof(char));
 	assert(counts && chars);
 	int count = 1,n = 0;
 	char c;
