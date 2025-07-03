@@ -5,10 +5,10 @@ https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/concurrency-pz
 https://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/Projects/p1a.html
 
 
-compile using gcc -o wzip wzip.c -Wall -Werror -pthread -O
+compile using gcc -o wzip wzip.c -Wall -Werror -pthread -O \
 
-RUN: ./test-wzip.sh -v
-OUTPUT:
+RUN: ./test-wzip.sh -v \
+OUTPUT: \
 running test 1: basic test - some 'a' characters 
 test:      ./wzip tests/1.in
 test 1: passed
