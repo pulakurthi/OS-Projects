@@ -23,6 +23,7 @@ typedef struct {
 
 void *worker(void *arg) {
 	myarg_t *args = (myarg_t *) arg;
+	/* consider using a linked list to store counts and chars */
 	int   *counts = (int*)malloc(args->mem_size * sizeof(int));
 	char  *chars  = (char*)malloc(args->mem_size * sizeof(char));
 	assert(counts && chars);
@@ -135,6 +136,8 @@ int main(int argc, char *argv[]) {
 			} else if(c == prev_char){
 				prev_count += count;
 			} else {
+				/* instead of writing 1 int/char at a time consider storing the data in a buffer
+                                    and write to file when the buffer is full.*/
 				fwrite(&prev_count,  sizeof(int), 1, stdout);
 				fwrite(&prev_char, sizeof(char),1, stdout);
 				prev_count  = count;
